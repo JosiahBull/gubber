@@ -1,0 +1,26 @@
+name: Run golangci-lint
+on:
+  push:
+    branches:
+      - master
+      - main
+      - v*
+
+permissions:
+  contents: read
+
+jobs:
+  golangci:
+    name: lint checker
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/setup-go@v3
+
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Run golang-lint
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: v1.43
+          args: --timeout=5m

@@ -1,13 +1,16 @@
-FROM golang:latest
+# syntax=docker/dockerfile:1
+FROM golang:1.18
+
+# update and install dependencies
+RUN apt-get update
+RUN apt-get install -y git
 
 WORKDIR /app
 
-COPY go.mod ./
-COPY go.sum ./
+COPY . .
+
 RUN go mod download
 
-COPY *.go ./
+RUN go build -o /gubber
 
-RUN go build -o /main
-
-CMD [ "/main" ]
+ENTRYPOINT [ "/gubber" ]

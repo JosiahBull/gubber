@@ -1,0 +1,13 @@
+version: "3.9"
+services:
+  gubber:
+    container_name: gubber
+    restart: unless-stopped
+    image: ghcr.io/josiahbull/gubber
+    volumes:
+      - ${GITHUB_LOCATION}:/respository
+    environment:
+      GITHUB_TOKEN: ${GITHUB_TOKEN}
+      GITHUB_LOCATION: /repsoitory
+      INTERVAL: ${INTERVAL:-86400}
+      BACKUPS: ${BACKUPS:-30}
