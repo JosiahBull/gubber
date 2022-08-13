@@ -5,9 +5,9 @@ services:
     restart: unless-stopped
     image: ghcr.io/josiahbull/gubber:main
     volumes:
-      - ${LOCATION}:/respository
+      - ./repository:/app/repository
     environment:
       GITHUB_TOKEN: ${GITHUB_TOKEN}
-      LOCATION: /repsoitory
+      LOCATION: ./repository
       INTERVAL: ${INTERVAL:-86400}
       BACKUPS: ${BACKUPS:-30}

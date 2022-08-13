@@ -93,7 +93,7 @@ func (d *Downloader) DownloadRepos(repos []*github.Repository, location *string)
 
 }
 
-func (d *Downloader) MigrateRepos(new_repos []*github.Repository, existing_path *string) error {
+func (d *Downloader) MigrateRepos(new_repos []*github.Repository, existing_path *string, backups_limit int) error {
 	// create temporary location to download repos
 	temp_path, err := ioutil.TempDir("", "downloader")
 	if err != nil {
@@ -125,6 +125,13 @@ func (d *Downloader) MigrateRepos(new_repos []*github.Repository, existing_path 
 				file_number, err := strconv.Atoi(item.Name()[7:])
 				if err != nil {
 					return fmt.Errorf("failed to convert folder name to int due to error %w", err)
+				}
+
+				if file_number >= backups_limit {
+					err = os.RemoveAll(*existing_path + "/" + item.Name())
+					if err != nil {
+						return fmt.Errorf("failed to remove old folder due to error %w", err)
+					}
 				}
 
 				new_name := "backT-" + strconv.Itoa(file_number+1)
