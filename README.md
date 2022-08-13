@@ -22,12 +22,12 @@ services:
   gubber:
     container_name: gubber
     restart: unless-stopped
-    image: ghcr.io/josiahbull/gubber
+    image: ghcr.io/josiahbull/gubber:main
     volumes:
       - ${GITHUB_LOCATION}:/respository
     environment:
       GITHUB_TOKEN: ${GITHUB_TOKEN}
-      GITHUB_LOCATION: /repsoitory
+      LOCATION: ./repository
       INTERVAL: ${INTERVAL:-86400}
       BACKUPS: ${BACKUPS:-30}
 ```

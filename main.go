@@ -26,15 +26,30 @@ func main() {
 	for {
 		if !first {
 			fmt.Printf("Sleeping for %d seconds\n", config.Interval)
-			time.Sleep(time.Duration(config.Interval))
+			time.Sleep(time.Duration(config.Interval * 1000))
 		}
 		first = false
 
-		repos, err := github.GetRepos()
+		fmt.Println("Loading all repositories")
+
+		repos, err := github.GetAllAccessibleRepos()
 		if err != nil {
 			fmt.Printf("failed to get repos due to error %v\n", err)
 			continue
 		}
+
+		repos, err = github.RemoveEmptyRepos(repos)
+		if err != nil {
+			fmt.Printf("failed to remove empty repos due to error %v\n", err)
+			continue
+		}
+
+		if len(repos) == 0 {
+			fmt.Println("No repos to download")
+			continue
+		}
+
+		fmt.Printf("Downloading all %d repositories, and migrating old ones\n", len(repos))
 
 		err = downloader.MigrateRepos(repos, &config.Location)
 		if err != nil {

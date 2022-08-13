@@ -62,7 +62,7 @@ func (d *Downloader) DownloadRepo(repo *github.Repository, location *string) err
 
 	// move the bundle to the download location
 	fmt.Println("Moving:", repo.GetFullName())
-	err = os.Rename(org_folder+"/"+repo.GetName()+".git/"+repo.GetName()+".bundle", org_folder)
+	err = os.Rename(org_folder+"/"+repo.GetName()+".git/"+repo.GetName()+".bundle", org_folder+"/"+repo.GetName()+".bundle")
 	if err != nil {
 		return fmt.Errorf("failed to move bundle to download location due to error %w", err)
 	}
