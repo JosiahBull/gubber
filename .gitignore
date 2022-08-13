@@ -1,0 +1,4 @@
+main
+.env
+repository/*
+!repository/.gitkeep
