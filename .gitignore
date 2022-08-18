@@ -2,3 +2,4 @@ main
 .env
 repository/*
 !repository/.gitkeep
+*.json

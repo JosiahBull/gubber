@@ -3,7 +3,8 @@ services:
   gubber:
     container_name: gubber
     restart: unless-stopped
-    image: ghcr.io/josiahbull/gubber:main
+    # image: ghcr.io/josiahbull/gubber:main
+    build: .
     volumes:
       - ./repository:/app/repository
     environment:

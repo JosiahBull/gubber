@@ -129,3 +129,34 @@ func (g *GitHubAPI) GetAllAccessibleRepos() ([]*github.Repository, error) {
 	}
 	return repos, nil
 }
+
+// get the most recent commit for a repo
+func (g *GitHubAPI) GetLastCommit(repo *github.Repository) (*string, error) {
+
+	opt := github.CommitsListOptions{
+		ListOptions: github.ListOptions{
+			PerPage: 100,
+		},
+	}
+
+	commits, _, err := g.client.Repositories.ListCommits(g.ctx, repo.GetOwner().GetLogin(), repo.GetName(), &opt)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get commits for repo: %w", err)
+	}
+
+	commit := commits[0].GetSHA()
+
+	return &commit, nil
+}
+
+func (g *GitHubAPI) GetLastCommits(repo []*github.Repository) ([]*string, error) {
+	commits := make([]*string, 0)
+	for _, repo := range repo {
+		commit, err := g.GetLastCommit(repo)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get last commit for repo: %w", err)
+		}
+		commits = append(commits, commit)
+	}
+	return commits, nil
+}
