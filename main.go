@@ -66,11 +66,11 @@ func main() {
 		}
 
 		// load the json file from disk, with all the repos that we have downloaded and their latest commit
-		file, err := os.Open("repos.json")
+		file, err := os.Open(config.Location + "repos.json")
 
 		// create repos.json if it doesn't exist
 		if os.IsNotExist(err) {
-			file, err = os.Create("repos.json")
+			file, err = os.Create(config.Location + "repos.json")
 			if err != nil {
 				fmt.Printf("failed to create repos.json due to error %v\n", err)
 				continue

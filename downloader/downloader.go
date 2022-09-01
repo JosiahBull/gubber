@@ -13,6 +13,7 @@ import (
 	"strconv"
 	"strings"
 	"syscall"
+	"time"
 
 	"github.com/google/go-github/github"
 )
@@ -83,13 +84,26 @@ func (d *Downloader) DownloadRepo(repo *github.Repository, location *string) err
 // DownloadRepos will download all repos from github, saving them in the preconfigured location, under org/repo-name
 // it will download using multiple go routines to download up to 8 repositories at a time
 func (d *Downloader) DownloadRepos(repos []*github.Repository, location *string) error {
+	var errCount uint16 = 0
+
 	if len(repos) == 0 {
 		return errors.New("no repos to download")
 	}
 	for _, repo := range repos {
-		err := d.DownloadRepo(repo, location)
-		if err != nil {
-			return fmt.Errorf("failed to download repo %s due to error %w", repo.GetFullName(), err)
+		// try downloading the repo, if it fails, try again up to 20 times
+		for i := 0; i < 20; i++ {
+			err := d.DownloadRepo(repo, location)
+			if err != nil {
+				errCount++
+				// if error count is greater than 20, fail out
+				if errCount > 20 {
+					return fmt.Errorf("failed to download repo %s due to error %w", repo.GetFullName(), err)
+				}
+				//wait 10 seconds before trying again
+				time.Sleep(10 * time.Second)
+				continue
+			}
+			break
 		}
 	}
 	return nil
