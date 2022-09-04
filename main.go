@@ -42,7 +42,7 @@ func main() {
 
 		fmt.Println("Loading all repositories")
 
-		repos, err := github.GetAllAccessibleRepos()
+		repos, err := github.GetRepos()
 		if err != nil {
 			fmt.Printf("failed to get repos due to error %v\n", err)
 			continue
@@ -147,7 +147,7 @@ func main() {
 			continue
 		}
 
-		err = ioutil.WriteFile("repos.json", jsonReposBytes, 0644)
+		err = ioutil.WriteFile(config.Location+"/repos.json", jsonReposBytes, 0644)
 		if err != nil {
 			fmt.Printf("failed to write repos.json due to error %v\n", err)
 			continue

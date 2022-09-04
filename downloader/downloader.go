@@ -139,7 +139,7 @@ func (d *Downloader) MigrateRepos(new_repos []*github.Repository, existing_path 
 	for _, item := range items {
 		if item.IsDir() {
 			if strings.HasPrefix(item.Name(), "backT-") {
-				file_number, err := strconv.Atoi(item.Name()[7:])
+				file_number, err := strconv.Atoi(item.Name()[6:])
 				if err != nil {
 					return fmt.Errorf("failed to convert folder name to int due to error %w", err)
 				}

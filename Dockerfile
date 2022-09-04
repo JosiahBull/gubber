@@ -9,6 +9,9 @@ WORKDIR /app
 
 COPY . .
 
+# remove any files that match the gitignore
+RUN git clean -Xdf
+
 RUN go mod download
 
 RUN go build -o /gubber

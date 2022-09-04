@@ -113,23 +113,6 @@ func (g *GitHubAPI) RemoveEmptyRepos(repos []*github.Repository) ([]*github.Repo
 	return filtered_repos, nil
 }
 
-// GetAllAccessibleRepos returns a list of all repositories that this account has access to
-func (g *GitHubAPI) GetAllAccessibleRepos() ([]*github.Repository, error) {
-	orgs, err := g.GetOrgs()
-	if err != nil {
-		return nil, fmt.Errorf("failed to get orgs: %w", err)
-	}
-	repos := make([]*github.Repository, 0)
-	for _, org := range orgs {
-		org_repos, err := g.GetOrgRepos(org)
-		if err != nil {
-			return nil, fmt.Errorf("failed to get org repos: %w", err)
-		}
-		repos = append(repos, org_repos...)
-	}
-	return repos, nil
-}
-
 // get the most recent commit for a repo
 func (g *GitHubAPI) GetLastCommit(repo *github.Repository) (*string, error) {
 
