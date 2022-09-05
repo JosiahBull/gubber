@@ -3,7 +3,7 @@ FROM golang:1.18
 
 # update and install dependencies
 RUN apt-get update
-RUN apt-get install -y git
+RUN apt-get install -y git rdiff-backup
 
 WORKDIR /app
 

@@ -15,8 +15,76 @@ import (
 )
 
 type JsonRepos struct {
-	Repos   []string `json:"repos"`
-	Commits []string `json:"commits"`
+	Repos map[string]string `json:"repos"`
+}
+
+func removeUnchangedRepos(github downloader.GitHubAPI, config config.Config, repos []*githubSource.Repository) ([]*githubSource.Repository, error) {
+	// load the last commit for each repo
+	commits, err := github.GetLastCommits(repos)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get last commits due to error %w", err)
+	}
+
+	// load the json file from disk, with all the repos that we have downloaded and their latest commit
+	file, err := os.Open(config.Location + "/repos.json")
+
+	// create repos.json if it doesn't exist
+	if os.IsNotExist(err) {
+		file, err = os.Create(config.Location + "/repos.json")
+		if err != nil {
+			return nil, fmt.Errorf("failed to create repos.json due to error %w", err)
+		}
+		// write {} to the file
+		_, err := file.Write([]byte("{}"))
+		if err != nil {
+			return nil, fmt.Errorf("failed to write to repos.json due to error %w", err)
+		}
+	}
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to open repos.json due to error %w", err)
+	}
+
+	byteValue, err := ioutil.ReadAll(file)
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to read repos.json due to error %w", err)
+	}
+
+	var jsonRepos JsonRepos
+	err = json.Unmarshal(byteValue, &jsonRepos)
+	if err != nil {
+		fmt.Printf("failed to unmarshal repos.json due to error %v\n", err)
+		// set jsonRepos to an empty struct
+		jsonRepos = JsonRepos{
+			Repos: make(map[string]string),
+		}
+	}
+
+	// if a repo with the same commit is already in the map, remove it from the list of repos to download
+	newRepos := make([]*githubSource.Repository, 0)
+	for i, repo := range repos {
+		if commit, ok := jsonRepos.Repos[repo.GetFullName()]; ok {
+			if commit != *commits[i] {
+				newRepos = append(newRepos, repo)
+			}
+		} else {
+			newRepos = append(newRepos, repo)
+		}
+		jsonRepos.Repos[repo.GetFullName()] = *commits[i]
+	}
+
+	jsonReposBytes, err := json.Marshal(jsonRepos)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal jsonRepos due to error %w", err)
+	}
+
+	err = ioutil.WriteFile(config.Location+"/repos.json", jsonReposBytes, 0644)
+	if err != nil {
+		return nil, fmt.Errorf("failed to write to repos.json due to error %w", err)
+	}
+
+	return newRepos, nil
 }
 
 func main() {
@@ -48,6 +116,8 @@ func main() {
 			continue
 		}
 
+		fmt.Printf("Found %d repositories\n", len(repos))
+
 		fmt.Println("Removing empty repositories")
 
 		repos, err = github.RemoveEmptyRepos(repos)
@@ -58,98 +128,10 @@ func main() {
 
 		fmt.Printf("Found %d repositories\n", len(repos))
 
-		// load the last commit for each repo
-		commits, err := github.GetLastCommits(repos)
+		fmt.Println("Removing unchanged repositories")
+		repos, err = removeUnchangedRepos(*github, *config, repos)
 		if err != nil {
-			fmt.Printf("failed to get last commits due to error %v\n", err)
-			continue
-		}
-
-		// load the json file from disk, with all the repos that we have downloaded and their latest commit
-		file, err := os.Open(config.Location + "/repos.json")
-
-		// create repos.json if it doesn't exist
-		if os.IsNotExist(err) {
-			file, err = os.Create(config.Location + "/repos.json")
-			if err != nil {
-				fmt.Printf("failed to create repos.json due to error %v\n", err)
-				continue
-			}
-			// write {} to the file
-			_, err := file.Write([]byte("{}"))
-			if err != nil {
-				fmt.Printf("failed to write to repos.json due to error %v\n", err)
-				continue
-			}
-		}
-
-		if err != nil {
-			fmt.Printf("failed to open repos.json due to error %v\n", err)
-			continue
-		}
-
-		byteValue, err := ioutil.ReadAll(file)
-
-		if err != nil {
-			fmt.Printf("failed to read repos.json due to error %v\n", err)
-			continue
-		}
-
-		var jsonRepos JsonRepos
-		err = json.Unmarshal(byteValue, &jsonRepos)
-		if err != nil {
-			fmt.Printf("failed to unmarshal repos.json due to error %v\n", err)
-			continue
-		}
-
-		// convert jsonRepos to a map of repos to commits
-		jsonReposMap := make(map[string]string)
-		for i, repo := range jsonRepos.Repos {
-			jsonReposMap[repo] = jsonRepos.Commits[i]
-		}
-
-		// if a repo with the same commit is already in the map, remove it from the list of repos to download
-		newRepos := make([]*githubSource.Repository, 0)
-		newCommits := make([]*string, 0)
-		for i, repo := range repos {
-			if commit, ok := jsonReposMap[repo.GetFullName()]; ok {
-				if commit != *commits[i] {
-					newRepos = append(newRepos, repo)
-					newCommits = append(newCommits, commits[i])
-				}
-			} else {
-				newRepos = append(newRepos, repo)
-				newCommits = append(newCommits, commits[i])
-			}
-		}
-
-		fmt.Printf("Found %d new repos\n", len(newRepos))
-
-		repos = newRepos
-		commits = newCommits
-
-		// convert repos to a map of repos to commits, and save it to disk
-		reposMap := make(map[string]string)
-		for i, repo := range repos {
-			reposMap[repo.GetFullName()] = *commits[i]
-		}
-
-		jsonRepos.Repos = make([]string, 0, len(reposMap))
-		jsonRepos.Commits = make([]string, 0, len(reposMap))
-		for repo, commit := range reposMap {
-			jsonRepos.Repos = append(jsonRepos.Repos, repo)
-			jsonRepos.Commits = append(jsonRepos.Commits, commit)
-		}
-
-		jsonReposBytes, err := json.Marshal(jsonRepos)
-		if err != nil {
-			fmt.Printf("failed to marshal repos.json to disk due to error %v\n", err)
-			continue
-		}
-
-		err = ioutil.WriteFile(config.Location+"/repos.json", jsonReposBytes, 0644)
-		if err != nil {
-			fmt.Printf("failed to write repos.json due to error %v\n", err)
+			fmt.Printf("failed to remove unchanged repos due to error %v\n", err)
 			continue
 		}
 
