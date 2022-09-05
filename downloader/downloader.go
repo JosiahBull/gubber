@@ -9,9 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"sort"
 	"strconv"
-	"strings"
 	"syscall"
 	"time"
 
@@ -82,7 +80,6 @@ func (d *Downloader) DownloadRepo(repo *github.Repository, location *string) err
 }
 
 // DownloadRepos will download all repos from github, saving them in the preconfigured location, under org/repo-name
-// it will download using multiple go routines to download up to 8 repositories at a time
 func (d *Downloader) DownloadRepos(repos []*github.Repository, location *string) error {
 	var errCount uint16 = 0
 
@@ -124,46 +121,56 @@ func (d *Downloader) MigrateRepos(new_repos []*github.Repository, existing_path 
 		return fmt.Errorf("failed to download new repos due to error %w", err)
 	}
 
-	// for every folder called "backT-x" in the existing location, increment x in it's name by one and move it
-	items, err := ioutil.ReadDir(*existing_path)
-	if err != nil {
-		return fmt.Errorf("failed to read existing location due to error %w", err)
+	// increment all backups by one, starting from T-backup_limit and working down
+	for i := backups_limit; i > 0; i-- {
+		// if the backup exists, increment it
+		if Exists(*existing_path + "/T-" + strconv.Itoa(i)) {
+			err = os.Rename(*existing_path+"/T-"+strconv.Itoa(i), *existing_path+"/T-"+strconv.Itoa(i+1))
+			if err != nil {
+				return fmt.Errorf("failed to increment backup %d due to error %w", i, err)
+			}
+		}
 	}
 
-	// sort items alphabetically
-	sort.Slice(items, func(i, j int) bool {
-		return items[i].Name() < items[j].Name()
-	})
+	// move the new repos to the existing path at T-0
+	err = MoveFolder(temp_path, *existing_path+"/T-0")
+	if err != nil {
+		return fmt.Errorf("failed to move new repos to existing path due to error %w", err)
+	}
 
-	// rename old folders
-	for _, item := range items {
-		if item.IsDir() {
-			if strings.HasPrefix(item.Name(), "backT-") {
-				file_number, err := strconv.Atoi(item.Name()[6:])
-				if err != nil {
-					return fmt.Errorf("failed to convert folder name to int due to error %w", err)
-				}
+	// if a file exists in the older backup, but not the newer backup, move it to the newer backup
+	// if a file exists in both, generate a diff and replace the older backup with a .patch file
+	for i := backups_limit + 1; i > 1; i-- {
+		// if the backup exists, increment it
+		if Exists(*existing_path + "/T-" + strconv.Itoa(i)) {
+			// get a list of all files in the backup
+			files, err := ioutil.ReadDir(*existing_path + "/T-" + strconv.Itoa(i))
+			if err != nil {
+				return fmt.Errorf("failed to get list of files in backup %d due to error %w", i, err)
+			}
 
-				if file_number >= backups_limit {
-					err = os.RemoveAll(*existing_path + "/" + item.Name())
+			// for each file, check if it exists in the older backup
+			for _, file := range files {
+				if Exists(*existing_path + "/T-" + strconv.Itoa(i-1) + "/" + file.Name()) {
+					// if it does, generate a diff and replace the older backup with a .patch file
+					//TODO: generate diff and replace patch file
+				} else {
+					// if it doesn't, move it to the newer backup
+					err = os.Rename(*existing_path+"/T-"+strconv.Itoa(i)+"/"+file.Name(), *existing_path+"/T-"+strconv.Itoa(i-1)+"/"+file.Name())
 					if err != nil {
-						return fmt.Errorf("failed to remove old folder due to error %w", err)
+						return fmt.Errorf("failed to move file %s from backup %d to backup %d due to error %w", file.Name(), i, i-1, err)
 					}
-				}
-
-				new_name := "backT-" + strconv.Itoa(file_number+1)
-				err = os.Rename(*existing_path+"/"+item.Name(), *existing_path+"/"+new_name)
-				if err != nil {
-					return fmt.Errorf("failed to rename folder due to error %w", err)
 				}
 			}
 		}
 	}
 
-	// move the temporary location to the repo location, naming it "backT-0"
-	err = MoveFolder(temp_path, *existing_path+"/backT-0")
-	if err != nil {
-		return fmt.Errorf("failed to move temporary location to repo location due to error %w", err)
+	// try to delete T-backup_limit if it exists
+	if Exists(*existing_path + "/T-" + strconv.Itoa(backups_limit)) {
+		err = os.RemoveAll(*existing_path + "/T-" + strconv.Itoa(backups_limit))
+		if err != nil {
+			return fmt.Errorf("failed to delete backup %d due to error %w", backups_limit, err)
+		}
 	}
 
 	return nil
