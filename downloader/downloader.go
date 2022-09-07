@@ -122,7 +122,7 @@ func (d *Downloader) MigrateRepos(new_repos []*github.Repository, existing_path 
 	}
 
 	// increment all backups by one, starting from T-backup_limit and working down
-	for i := backups_limit; i > 0; i-- {
+	for i := backups_limit; i >= 0; i-- {
 		// if the backup exists, increment it
 		if Exists(*existing_path + "/T-" + strconv.Itoa(i)) {
 			err = os.Rename(*existing_path+"/T-"+strconv.Itoa(i), *existing_path+"/T-"+strconv.Itoa(i+1))
@@ -140,25 +140,44 @@ func (d *Downloader) MigrateRepos(new_repos []*github.Repository, existing_path 
 
 	// if a file exists in the older backup, but not the newer backup, move it to the newer backup
 	// if a file exists in both, generate a diff and replace the older backup with a .patch file
-	for i := backups_limit + 1; i > 1; i-- {
+	for i := backups_limit + 1; i >= 1; i-- {
 		// if the backup exists, increment it
 		if Exists(*existing_path + "/T-" + strconv.Itoa(i)) {
-			// get a list of all files in the backup
-			files, err := ioutil.ReadDir(*existing_path + "/T-" + strconv.Itoa(i))
+			//location will contain folders, with items. Recurse into each folder one at a time
+			orgfiles, err := ioutil.ReadDir(*existing_path + "/T-" + strconv.Itoa(i))
 			if err != nil {
-				return fmt.Errorf("failed to get list of files in backup %d due to error %w", i, err)
+				return fmt.Errorf("failed to read directory %s due to error %w", *existing_path+"/T-"+strconv.Itoa(i), err)
 			}
 
-			// for each file, check if it exists in the older backup
-			for _, file := range files {
-				if Exists(*existing_path + "/T-" + strconv.Itoa(i-1) + "/" + file.Name()) {
-					// if it does, generate a diff and replace the older backup with a .patch file
-					//TODO: generate diff and replace patch file
-				} else {
-					// if it doesn't, move it to the newer backup
-					err = os.Rename(*existing_path+"/T-"+strconv.Itoa(i)+"/"+file.Name(), *existing_path+"/T-"+strconv.Itoa(i-1)+"/"+file.Name())
+			for _, orgfile := range orgfiles {
+				// if the file is a directory, recurse into it
+				if orgfile.IsDir() {
+					// get a list of all files in the directory
+					files, err := ioutil.ReadDir(*existing_path + "/T-" + strconv.Itoa(i) + "/" + orgfile.Name())
 					if err != nil {
-						return fmt.Errorf("failed to move file %s from backup %d to backup %d due to error %w", file.Name(), i, i-1, err)
+						return fmt.Errorf("failed to read directory %s due to error %w", *existing_path+"/T-"+strconv.Itoa(i)+"/"+orgfile.Name(), err)
+					}
+
+					// for each file, check if it exists in the newer backup
+					for _, file := range files {
+						if Exists(*existing_path + "/T-" + strconv.Itoa(i-1) + "/" + orgfile.Name() + "/" + file.Name()) {
+							// if it does, generate a diff and replace the older backup with a .patch file
+							//TODO: generate diff and replace patch file
+						} else {
+							// if it doesn't, move it to the newer backup
+							// check if the org exists in the new backup, if it doesn't create the directory
+							if !Exists(*existing_path + "/T-" + strconv.Itoa(i-1) + "/" + orgfile.Name()) {
+								err = os.Mkdir(*existing_path+"/T-"+strconv.Itoa(i-1)+"/"+orgfile.Name(), 0755)
+								if err != nil {
+									return fmt.Errorf("failed to create directory %s due to error %w", *existing_path+"/T-"+strconv.Itoa(i-1)+"/"+orgfile.Name(), err)
+								}
+							}
+
+							err = os.Rename(*existing_path+"/T-"+strconv.Itoa(i)+"/"+orgfile.Name()+"/"+file.Name(), *existing_path+"/T-"+strconv.Itoa(i-1)+"/"+orgfile.Name()+"/"+file.Name())
+							if err != nil {
+								return fmt.Errorf("failed to move file %s from backup %d to backup %d due to error %w", file.Name(), i, i-1, err)
+							}
+						}
 					}
 				}
 			}
