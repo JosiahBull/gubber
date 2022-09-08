@@ -117,11 +117,19 @@ func (d *Downloader) DownloadRepos(repos []*github.Repository, location *string)
 
 }
 
-func (d *Downloader) MigrateRepos(new_repos []*github.Repository, existing_path *string, backups_limit int) error {
+func (d *Downloader) MigrateRepos(new_repos []*github.Repository, existing_path *string, backups_limit int, temp_location *string) error {
 	// create temporary location to download repos
-	temp_path, err := ioutil.TempDir("", "gubber")
+	temp_path := *temp_location + "/temp"
+	// if any files exist in the temp location, delete them
+	if Exists(temp_path) {
+		err := os.RemoveAll(temp_path)
+		if err != nil {
+			return fmt.Errorf("failed to remove existing temp folder due to error %w", err)
+		}
+	}
+	err := os.MkdirAll(temp_path, 0755)
 	if err != nil {
-		return fmt.Errorf("failed to create temporary location due to error %w", err)
+		return fmt.Errorf("failed to create temp folder due to error %w", err)
 	}
 	defer os.RemoveAll(temp_path)
 

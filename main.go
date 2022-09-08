@@ -145,7 +145,7 @@ func main() {
 
 		fmt.Printf("Downloading all %d repositories, and migrating old ones\n", len(repos))
 
-		err = downloader.MigrateRepos(repos, &config.Location, config.Backups)
+		err = downloader.MigrateRepos(repos, &config.Location, config.Backups, &config.TempLocation)
 		if err != nil {
 			fmt.Printf("failed to migrate repos due to error %v\n", err)
 			continue

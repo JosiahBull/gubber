@@ -10,10 +10,11 @@ import (
 )
 
 type Config struct {
-	Token    string
-	Location string
-	Interval int
-	Backups  int
+	Token        string
+	Location     string
+	TempLocation string
+	Interval     int
+	Backups      int
 }
 
 func NewConfig() *Config {
@@ -21,6 +22,11 @@ func NewConfig() *Config {
 	location := os.Getenv("LOCATION")
 	interval := os.Getenv("INTERVAL")
 	backups := os.Getenv("BACKUPS")
+	tmp_location := os.Getenv("TEMP_LOCATION")
+
+	if tmp_location == "" {
+		tmp_location = "/tmp"
+	}
 
 	// parse interval as int
 	interval_int, err := strconv.Atoi(interval)
@@ -35,10 +41,11 @@ func NewConfig() *Config {
 	}
 
 	return &Config{
-		Token:    token,
-		Location: location,
-		Interval: interval_int,
-		Backups:  backups_int,
+		Token:        token,
+		Location:     location,
+		Interval:     interval_int,
+		Backups:      backups_int,
+		TempLocation: tmp_location,
 	}
 }
 
