@@ -45,6 +45,15 @@ func (d *Downloader) DownloadRepo(repo *github.Repository, location *string) err
 
 	// download the repo
 	fmt.Println("Downloading:", repo.GetFullName())
+
+	// if output file exists, delete it
+	if Exists(org_folder + "/" + repo.GetName() + ".git") {
+		err := os.RemoveAll(org_folder + "/" + repo.GetName() + ".git")
+		if err != nil {
+			return fmt.Errorf("failed to remove existing repo folder due to error %w", err)
+		}
+	}
+
 	cmd := exec.CommandContext(d.ctx, "git", "clone", "--mirror", "https://"+d.token+"@github.com/"+repo.GetFullName()+".git", org_folder+"/"+repo.GetName()+".git")
 	output, err := cmd.CombinedOutput()
 	if err != nil {
