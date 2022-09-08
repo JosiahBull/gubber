@@ -97,12 +97,13 @@ func (d *Downloader) DownloadRepos(repos []*github.Repository, location *string)
 	}
 	for _, repo := range repos {
 		// try downloading the repo, if it fails, try again up to 20 times
-		for i := 0; i < 20; i++ {
+		for i := 0; i < 6; i++ {
 			err := d.DownloadRepo(repo, location)
 			if err != nil {
 				errCount++
-				// if error count is greater than 20, fail out
-				if errCount > 20 {
+				// if error count is greater than 4, fail out
+				fmt.Println("Error downloading repo:", repo.GetFullName(), "due to error:", err)
+				if errCount > 4 {
 					return fmt.Errorf("failed to download repo %s due to error %w", repo.GetFullName(), err)
 				}
 				//wait 10 seconds before trying again
@@ -186,6 +187,24 @@ func (d *Downloader) MigrateRepos(new_repos []*github.Repository, existing_path 
 							if err != nil {
 								return fmt.Errorf("failed to move file %s from backup %d to backup %d due to error %w", file.Name(), i, i-1, err)
 							}
+						}
+					}
+				}
+			}
+
+			// if any of the orgFiles are empty folders, remove them
+			for _, orgfile := range orgfiles {
+				if orgfile.IsDir() {
+					// get a list of all files in the directory
+					files, err := ioutil.ReadDir(*existing_path + "/T-" + strconv.Itoa(i) + "/" + orgfile.Name())
+					if err != nil {
+						return fmt.Errorf("failed to read directory %s due to error %w", *existing_path+"/T-"+strconv.Itoa(i)+"/"+orgfile.Name(), err)
+					}
+
+					if len(files) == 0 {
+						err = os.Remove(*existing_path + "/T-" + strconv.Itoa(i) + "/" + orgfile.Name())
+						if err != nil {
+							return fmt.Errorf("failed to remove directory %s due to error %w", *existing_path+"/T-"+strconv.Itoa(i)+"/"+orgfile.Name(), err)
 						}
 					}
 				}
