@@ -110,10 +110,40 @@ func main() {
 
 		fmt.Println("Loading all repositories")
 
+		orgs, err := github.GetOrgs()
+		if err != nil {
+			fmt.Printf("failed to get orgs due to error %v\n", err)
+			continue
+		}
+
 		repos, err := github.GetRepos()
 		if err != nil {
 			fmt.Printf("failed to get repos due to error %v\n", err)
 			continue
+		}
+
+		// load all the repos from the orgs
+		for _, org := range orgs {
+			fmt.Printf("Loading repos for org %s\n", org.GetLogin())
+			orgRepos, err := github.GetOrgRepos(org)
+			if err != nil {
+				fmt.Printf("failed to get org repos due to error %v for org %s\n", err, org.GetLogin())
+				continue
+			}
+
+			// avoid duplicates by only adding repos that are not already in the list
+			for _, orgRepo := range orgRepos {
+				found := false
+				for _, repo := range repos {
+					if repo.GetFullName() == orgRepo.GetFullName() {
+						found = true
+						break
+					}
+				}
+				if !found {
+					repos = append(repos, orgRepo)
+				}
+			}
 		}
 
 		fmt.Printf("Found %d repositories\n", len(repos))
