@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-FROM golang:1.18
+FROM golang:1.23
 
 # update and install dependencies
 RUN apt-get update
