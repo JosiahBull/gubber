@@ -4,7 +4,7 @@ go 1.18
 
 require (
 	github.com/google/go-github v17.0.0+incompatible
-	golang.org/x/oauth2 v0.0.0-20220808172628-8227340efae7
+	golang.org/x/oauth2 v0.23.0
 )
 
 require (
