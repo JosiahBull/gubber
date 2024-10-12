@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 	"time"
 
@@ -45,7 +45,7 @@ func removeUnchangedRepos(github download.GitHubAPI, config config.Config, repos
 		return nil, fmt.Errorf("failed to open repos.json due to error %w", err)
 	}
 
-	byteValue, err := ioutil.ReadAll(file)
+	byteValue, err := io.ReadAll(file)
 
 	if err != nil {
 		return nil, fmt.Errorf("failed to read repos.json due to error %w", err)
@@ -79,7 +79,7 @@ func removeUnchangedRepos(github download.GitHubAPI, config config.Config, repos
 		return nil, fmt.Errorf("failed to marshal jsonRepos due to error %w", err)
 	}
 
-	err = ioutil.WriteFile(config.Location+"/repos.json", jsonReposBytes, 0644)
+	err = os.WriteFile(config.Location+"/repos.json", jsonReposBytes, 0644)
 	if err != nil {
 		return nil, fmt.Errorf("failed to write to repos.json due to error %w", err)
 	}
