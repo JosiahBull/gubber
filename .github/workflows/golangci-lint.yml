@@ -13,13 +13,13 @@ jobs:
     name: lint checker
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/setup-go@v3
-
       - name: Checkout code
         uses: actions/checkout@v3
 
+      - uses: actions/setup-go@v4
+
       - name: Run golang-lint
-        uses: golangci/golangci-lint-action@v3
+        uses: golangci/golangci-lint-action@v6
         with:
-          version: v1.43
-          args: --timeout=5m
+          version: latest
+          args: --timeout=10m
