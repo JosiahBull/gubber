@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -166,7 +165,7 @@ func (d *Downloader) MigrateRepos(new_repos []*github.Repository, existing_path 
 		// if the backup exists, increment it
 		if Exists(*existing_path + "/T-" + strconv.Itoa(i)) {
 			//location will contain folders, with items. Recurse into each folder one at a time
-			orgfiles, err := ioutil.ReadDir(*existing_path + "/T-" + strconv.Itoa(i))
+			orgfiles, err := os.ReadDir(*existing_path + "/T-" + strconv.Itoa(i))
 			if err != nil {
 				return fmt.Errorf("failed to read directory %s due to error %w", *existing_path+"/T-"+strconv.Itoa(i), err)
 			}
@@ -175,7 +174,7 @@ func (d *Downloader) MigrateRepos(new_repos []*github.Repository, existing_path 
 				// if the file is a directory, recurse into it
 				if orgfile.IsDir() {
 					// get a list of all files in the directory
-					files, err := ioutil.ReadDir(*existing_path + "/T-" + strconv.Itoa(i) + "/" + orgfile.Name())
+					files, err := os.ReadDir(*existing_path + "/T-" + strconv.Itoa(i) + "/" + orgfile.Name())
 					if err != nil {
 						return fmt.Errorf("failed to read directory %s due to error %w", *existing_path+"/T-"+strconv.Itoa(i)+"/"+orgfile.Name(), err)
 					}
@@ -205,7 +204,7 @@ func (d *Downloader) MigrateRepos(new_repos []*github.Repository, existing_path 
 			for _, orgfile := range orgfiles {
 				if orgfile.IsDir() {
 					// get a list of all files in the directory
-					files, err := ioutil.ReadDir(*existing_path + "/T-" + strconv.Itoa(i) + "/" + orgfile.Name())
+					files, err := os.ReadDir(*existing_path + "/T-" + strconv.Itoa(i) + "/" + orgfile.Name())
 					if err != nil {
 						return fmt.Errorf("failed to read directory %s due to error %w", *existing_path+"/T-"+strconv.Itoa(i)+"/"+orgfile.Name(), err)
 					}
