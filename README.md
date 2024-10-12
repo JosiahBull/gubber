@@ -6,31 +6,7 @@ Gubber does not keep full backups of repositories for each day, instead generati
 
 Gubber includes a tool for restoring a backup automatically using these diffs, which can be found below.
 
-## Restoring a Backup
-```bash
-cd /your/backup/location
-./gubber restore <owner_name>/<repo_name> <days> <output_dir>
-# example
-./gubber restore josiahbull/gubber 2 /home/$USER/backup_repo/
-```
-
 ## Installation
-`docker-compose.yml`
-```yaml
-version: "3.9"
-services:
-  gubber:
-    container_name: gubber
-    restart: unless-stopped
-    image: ghcr.io/josiahbull/gubber:main
-    volumes:
-      - ${GITHUB_LOCATION}:/respository
-    environment:
-      GITHUB_TOKEN: ${GITHUB_TOKEN}
-      LOCATION: ./repository
-      INTERVAL: ${INTERVAL:-86400}
-      BACKUPS: ${BACKUPS:-30}
-```
 
 ```bash
 nano .env #add your gh key, configure variables, see .example.env
@@ -38,4 +14,5 @@ docker-compose --env-file .env up -d
 ```
 
 ## Licensing and Contribution
+
 Unless otherwise stated, all contributions will be licensed under the [MIT license](./LICENSE).

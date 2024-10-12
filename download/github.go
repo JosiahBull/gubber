@@ -1,9 +1,10 @@
-package downloader
+package download
 
 import (
 	"context"
 	"crypto/sha256"
 	"fmt"
+	"time"
 
 	"github.com/google/go-github/github"
 	"golang.org/x/oauth2"
@@ -39,6 +40,13 @@ func (g *GitHubAPI) GetOrgs() ([]*github.Organization, error) {
 		if err != nil {
 			return nil, fmt.Errorf("failed to get orgs: %w", err)
 		}
+
+		if resp.Rate.Remaining < 500 {
+			fmt.Printf("Rate limit reached, sleeping for %v seconds\n", time.Until(resp.Rate.Reset.Time).Seconds())
+
+			time.Sleep(time.Until(resp.Rate.Reset.Time))
+		}
+
 		orgs = append(orgs, new_orgs...)
 		if resp.NextPage == 0 {
 			break
@@ -62,6 +70,13 @@ func (g *GitHubAPI) GetRepos() ([]*github.Repository, error) {
 		if err != nil {
 			return nil, fmt.Errorf("failed to get repos: %w", err)
 		}
+
+		if resp.Rate.Remaining < 500 {
+			fmt.Printf("Rate limit reached, sleeping for %v seconds\n", time.Until(resp.Rate.Reset.Time).Seconds())
+
+			time.Sleep(time.Until(resp.Rate.Reset.Time))
+		}
+
 		repos = append(repos, new_repos...)
 		if resp.NextPage == 0 {
 			break
@@ -85,6 +100,13 @@ func (g *GitHubAPI) GetOrgRepos(org *github.Organization) ([]*github.Repository,
 		if err != nil {
 			return nil, fmt.Errorf("failed to get repos for org: %w", err)
 		}
+
+		if resp.Rate.Remaining < 500 {
+			fmt.Printf("Rate limit reached, sleeping for %v seconds\n", time.Until(resp.Rate.Reset.Time).Seconds())
+
+			time.Sleep(time.Until(resp.Rate.Reset.Time))
+		}
+
 		repos = append(repos, new_repos...)
 		if resp.NextPage == 0 {
 			break
@@ -102,6 +124,12 @@ func (g *GitHubAPI) RemoveEmptyRepos(repos []*github.Repository) ([]*github.Repo
 
 		// will return 404 error if the repo is empty
 		if err != nil {
+			if resp.Rate.Remaining < 500 {
+				fmt.Printf("Rate limit reached, sleeping for %v seconds\n", time.Until(resp.Rate.Reset.Time).Seconds())
+
+				time.Sleep(time.Until(resp.Rate.Reset.Time))
+			}
+
 			if resp.StatusCode == 404 {
 				continue
 			} else {
@@ -126,9 +154,15 @@ func (g *GitHubAPI) GetLastCommit(repo *github.Repository) (*string, error) {
 		PerPage: 100,
 		Page:    1,
 	}
-	event, _, err := g.client.Activity.ListRepositoryEvents(g.ctx, repo.GetOwner().GetLogin(), repo.GetName(), &opt)
+	event, resp, err := g.client.Activity.ListRepositoryEvents(g.ctx, repo.GetOwner().GetLogin(), repo.GetName(), &opt)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get events for repo: %w", err)
+	}
+
+	if resp.Rate.Remaining < 500 {
+		fmt.Printf("Rate limit reached, sleeping for %v seconds\n", time.Until(resp.Rate.Reset.Time).Seconds())
+
+		time.Sleep(time.Until(resp.Rate.Reset.Time))
 	}
 
 	// sha256 hash of resp body

@@ -1,19 +1,18 @@
-# syntax=docker/dockerfile:1
-FROM golang:1.23
-
-# update and install dependencies
-RUN apt-get update
-RUN apt-get install -y git rdiff-backup
+FROM golang:1.23-alpine AS builder
 
 WORKDIR /app
 
 COPY . .
 
-# remove any files that match the gitignore
-RUN git clean -Xdf
-
 RUN go mod download
 
 RUN go build -o /gubber
+
+FROM alpine:3.18 AS runner
+# update and install dependencies
+RUN apk update && \
+    apk add --no-cache git rdiff-backup
+
+COPY --from=builder /gubber /gubber
 
 ENTRYPOINT [ "/gubber" ]

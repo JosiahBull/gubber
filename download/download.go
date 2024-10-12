@@ -1,4 +1,4 @@
-package downloader
+package download
 
 import (
 	"context"
@@ -10,6 +10,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"syscall"
 	"time"
 
@@ -61,6 +62,10 @@ func (d *Downloader) DownloadRepo(repo *github.Repository, location *string) err
 	}
 
 	// bundle the repo
+	// This is a security measure to prevent command injection.
+	if strings.ContainsAny(repo.GetName(), ";|&") {
+		return fmt.Errorf("repo name contains invalid characters: %s", repo.GetName())
+	}
 	fmt.Println("Bundling:", repo.GetFullName())
 	cmd = exec.CommandContext(d.ctx, "git", "bundle", "create", repo.GetName()+".bundle", "--all")
 	cmd.Dir = org_folder + "/" + repo.GetName() + ".git"
@@ -90,23 +95,23 @@ func (d *Downloader) DownloadRepo(repo *github.Repository, location *string) err
 
 // DownloadRepos will download all repos from github, saving them in the preconfigured location, under org/repo-name
 func (d *Downloader) DownloadRepos(repos []*github.Repository, location *string) error {
-	var errCount uint16 = 0
+	const maxRetryTimes = 10
 
 	if len(repos) == 0 {
 		return errors.New("no repos to download")
 	}
 	for _, repo := range repos {
-		// try downloading the repo, if it fails, try again up to 20 times
-		for i := 0; i < 6; i++ {
+		errCount := 0
+		for {
 			err := d.DownloadRepo(repo, location)
 			if err != nil {
 				errCount++
 				// if error count is greater than 4, fail out
 				fmt.Println("Error downloading repo:", repo.GetFullName(), "due to error:", err)
-				if errCount > 4 {
+				if errCount > maxRetryTimes {
 					return fmt.Errorf("failed to download repo %s due to error %w", repo.GetFullName(), err)
 				}
-				//wait 10 seconds before trying again
+				// wait 10 seconds before trying again
 				time.Sleep(10 * time.Second)
 				continue
 			}
@@ -114,7 +119,6 @@ func (d *Downloader) DownloadRepos(repos []*github.Repository, location *string)
 		}
 	}
 	return nil
-
 }
 
 func (d *Downloader) MigrateRepos(new_repos []*github.Repository, existing_path *string, backups_limit int, temp_location *string) error {
@@ -178,10 +182,7 @@ func (d *Downloader) MigrateRepos(new_repos []*github.Repository, existing_path 
 
 					// for each file, check if it exists in the newer backup
 					for _, file := range files {
-						if Exists(*existing_path + "/T-" + strconv.Itoa(i-1) + "/" + orgfile.Name() + "/" + file.Name()) {
-							// if it does, generate a diff and replace the older backup with a .patch file
-							//TODO: generate diff and replace patch file
-						} else {
+						if !Exists(*existing_path + "/T-" + strconv.Itoa(i-1) + "/" + orgfile.Name() + "/" + file.Name()) {
 							// if it doesn't, move it to the newer backup
 							// check if the org exists in the new backup, if it doesn't create the directory
 							if !Exists(*existing_path + "/T-" + strconv.Itoa(i-1) + "/" + orgfile.Name()) {
@@ -315,9 +316,6 @@ func Copy(srcFile, dstFile string) error {
 		return err
 	}
 	defer in.Close()
-	if err != nil {
-		return err
-	}
 
 	_, err = io.Copy(out, in)
 	if err != nil {

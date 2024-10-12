@@ -1,15 +1,16 @@
-version: "3.9"
 services:
   gubber:
     container_name: gubber
     restart: unless-stopped
-    # image: ghcr.io/josiahbull/gubber:main
-    build: .
+    image: ghcr.io/josiahbull/gubber:main
+    build:
+      context: .
+      dockerfile: Dockerfile
     volumes:
-      - ./repository:/app/repository
+      - ./repository:/repository
     environment:
       GITHUB_TOKEN: ${GITHUB_TOKEN}
       LOCATION: ./repository
-      TEMP_LOCATION: /tmp
+      TEMP_LOCATION: ${TEMP_LOCATION:-/tmp}
       INTERVAL: ${INTERVAL:-86400}
       BACKUPS: ${BACKUPS:-30}

@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - v*
 
 permissions:
   contents: read
@@ -12,7 +11,7 @@ permissions:
 jobs:
   golangci:
     name: lint checker
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/setup-go@v3
 

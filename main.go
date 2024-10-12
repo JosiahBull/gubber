@@ -11,14 +11,14 @@ import (
 	githubSource "github.com/google/go-github/github"
 
 	"github.com/josiahbull/gubber/config"
-	"github.com/josiahbull/gubber/downloader"
+	"github.com/josiahbull/gubber/download"
 )
 
 type JsonRepos struct {
 	Repos map[string]string `json:"repos"`
 }
 
-func removeUnchangedRepos(github downloader.GitHubAPI, config config.Config, repos []*githubSource.Repository) ([]*githubSource.Repository, error) {
+func removeUnchangedRepos(github download.GitHubAPI, config config.Config, repos []*githubSource.Repository) ([]*githubSource.Repository, error) {
 	// load the last commit for each repo
 	commits, err := github.GetLastCommits(repos)
 	if err != nil {
@@ -88,17 +88,16 @@ func removeUnchangedRepos(github downloader.GitHubAPI, config config.Config, rep
 }
 
 func main() {
-	config := config.NewConfig()
-	err := config.Validate()
+	config, err := config.NewConfig()
 	if err != nil {
-		fmt.Printf("config error: %s\n", err)
+		fmt.Printf("failed to load config due to error %v\n", err)
 		panic(err)
 	}
 
 	ctx := context.Background()
 
-	github := downloader.NewGitHubAPI(ctx, &config.Token)
-	downloader := downloader.NewDownloader(ctx, &config.Token)
+	github := download.NewGitHubAPI(ctx, &config.Token)
+	downloader := download.NewDownloader(ctx, &config.Token)
 
 	first := true
 	for {
