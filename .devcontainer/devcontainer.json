@@ -1,0 +1,50 @@
+// For format details, see https://aka.ms/devcontainer.json. For config options, see the
+// README at: https://github.com/devcontainers/templates/tree/main/src/alpine
+{
+	"name": "gubber-dev",
+	"build": {
+		"dockerfile": "Dockerfile",
+		"context": "."
+	},
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"ms-azuretools.vscode-docker",
+				"DavidAnson.vscode-markdownlint",
+				"jkiviluoto.tws",
+				"stkb.rewrap",
+				"golang.Go",
+				"github.vscode-github-actions"
+			]
+		}
+	},
+	"mounts": [
+		// Mount the gpg key for signing commits
+		"source=${env:HOME}/.gnupg,target=/root/.gnupg,type=bind,consistency=cached",
+		// Mount the ssh keys for git
+		"source=${env:HOME}/.ssh,target=/root/.ssh,type=bind,consistency=cached",
+		// Mout the gitconfig for git
+		"source=${env:HOME}/.gitconfig,target=/root/.gitconfig,type=bind,consistency=cached",
+		// Mount zsh_history
+		"source=${env:HOME}/.zsh_history,target=/root/.zsh_history,type=bind,consistency=cached",
+		// Mount bash_history
+		"source=${env:HOME}/.bash_history,target=/root/.bash_history,type=bind,consistency=cached",
+		// Mount the docker socket to enable docker commands from inside of the container.
+		"source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind"
+	]
+
+	// Features to add to the dev container. More info: https://containers.dev/features.
+	// "features": {},
+
+	// Use 'forwardPorts' to make a list of ports inside the container available locally.
+	// "forwardPorts": [],
+
+	// Use 'postCreateCommand' to run commands after the container is created.
+	// "postCreateCommand": "uname -a",
+
+	// Configure tool-specific properties.
+	// "customizations": {},
+
+	// Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
+	// "remoteUser": "root"
+}

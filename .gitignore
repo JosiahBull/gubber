@@ -4,3 +4,4 @@ repository/*
 !repository/.gitkeep
 *.json
 gubber
+!.devcontainer/devcontainer.json
