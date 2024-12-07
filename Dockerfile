@@ -8,7 +8,7 @@ RUN go mod download
 
 RUN go build -o /gubber
 
-FROM alpine:3.20 AS runner
+FROM alpine:3.21 AS runner
 # update and install dependencies
 RUN apk update && \
     apk add --no-cache git rdiff-backup
