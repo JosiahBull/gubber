@@ -2,7 +2,7 @@ module github.com/josiahbull/gubber
 
 go 1.21
 
-toolchain go1.23.2
+toolchain go1.23.4
 
 require (
 	github.com/google/go-github v17.0.0+incompatible
