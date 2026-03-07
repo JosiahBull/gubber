@@ -134,7 +134,7 @@ func (d *Downloader) MigrateRepos(new_repos []*github.Repository, existing_path 
 	if err != nil {
 		return fmt.Errorf("failed to create temp folder due to error %w", err)
 	}
-	defer os.RemoveAll(temp_path)
+	defer func() { _ = os.RemoveAll(temp_path) }()
 
 	// download all new repos
 	err = d.DownloadRepos(new_repos, &temp_path)
@@ -308,13 +308,13 @@ func Copy(srcFile, dstFile string) error {
 		return err
 	}
 
-	defer out.Close()
+	defer func() { _ = out.Close() }()
 
 	in, err := os.Open(srcFile)
 	if err != nil {
 		return err
 	}
-	defer in.Close()
+	defer func() { _ = in.Close() }()
 
 	_, err = io.Copy(out, in)
 	if err != nil {
