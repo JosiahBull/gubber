@@ -17,14 +17,16 @@ import (
 )
 
 type Downloader struct {
-	ctx   context.Context
-	token string
+	ctx          context.Context
+	token        string
+	cloneBaseURL string
 }
 
 func NewDownloader(ctx context.Context, token *string) *Downloader {
 	return &Downloader{
-		ctx:   ctx,
-		token: *token,
+		ctx:          ctx,
+		token:        *token,
+		cloneBaseURL: "https://%s@github.com/%s.git",
 	}
 }
 
@@ -54,7 +56,8 @@ func (d *Downloader) DownloadRepo(repo *github.Repository, location *string) err
 		}
 	}
 
-	cmd := exec.CommandContext(d.ctx, "git", "clone", "--mirror", "https://"+d.token+"@github.com/"+repo.GetFullName()+".git", org_folder+"/"+repo.GetName()+".git")
+	cloneURL := fmt.Sprintf(d.cloneBaseURL, d.token, repo.GetFullName())
+	cmd := exec.CommandContext(d.ctx, "git", "clone", "--mirror", cloneURL, org_folder+"/"+repo.GetName()+".git")
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("failed to download repo due to error %w\nstdout + stderr: %s", err, output)
@@ -121,6 +124,10 @@ func (d *Downloader) DownloadRepos(repos []*github.Repository, location *string)
 }
 
 func (d *Downloader) MigrateRepos(new_repos []*github.Repository, existing_path *string, backups_limit int, temp_location *string) error {
+	return MigrateReposWithDownloader(d, new_repos, existing_path, backups_limit, temp_location)
+}
+
+func MigrateReposWithDownloader(dl RepoDownloader, new_repos []*github.Repository, existing_path *string, backups_limit int, temp_location *string) error {
 	// create temporary location to download repos
 	temp_path := *temp_location + "/temp"
 	// if any files exist in the temp location, delete them
@@ -137,7 +144,7 @@ func (d *Downloader) MigrateRepos(new_repos []*github.Repository, existing_path 
 	defer func() { _ = os.RemoveAll(temp_path) }()
 
 	// download all new repos
-	err = d.DownloadRepos(new_repos, &temp_path)
+	err = dl.DownloadRepos(new_repos, &temp_path)
 	if err != nil {
 		return fmt.Errorf("failed to download new repos due to error %w", err)
 	}
