@@ -84,11 +84,17 @@ func TestDownloadRepo_Success(t *testing.T) {
 		}
 	}
 
-	os.MkdirAll(workDir, 0755)
-	os.MkdirAll(filepath.Dir(bareDir), 0755)
+	if err := os.MkdirAll(workDir, 0755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.MkdirAll(filepath.Dir(bareDir), 0755); err != nil {
+		t.Fatal(err)
+	}
 	run(workDir, "git", "init")
 	run(workDir, "git", "checkout", "-b", "main")
-	os.WriteFile(filepath.Join(workDir, "README.md"), []byte("# test"), 0644)
+	if err := os.WriteFile(filepath.Join(workDir, "README.md"), []byte("# test"), 0644); err != nil {
+		t.Fatal(err)
+	}
 	run(workDir, "git", "add", ".")
 	run(workDir, "git", "commit", "-m", "initial")
 	run(srcDir, "git", "clone", "--bare", workDir, bareDir)

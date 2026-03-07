@@ -27,7 +27,7 @@ func TestGetOrgs_Empty(t *testing.T) {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/user/orgs", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode([]*github.Organization{})
+		_ = json.NewEncoder(w).Encode([]*github.Organization{})
 	})
 	server := httptest.NewServer(mux)
 	defer server.Close()
@@ -52,7 +52,7 @@ func TestGetRepos_SinglePage(t *testing.T) {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/user/repos", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode([]*github.Repository{
+		_ = json.NewEncoder(w).Encode([]*github.Repository{
 			{Name: &name, FullName: &fullName},
 		})
 	})
@@ -86,7 +86,7 @@ func TestGetLastCommit_HashesEvents(t *testing.T) {
 		w.Header().Set("Content-Type", "application/json")
 		id := "12345"
 		eventType := "PushEvent"
-		json.NewEncoder(w).Encode([]*github.Event{
+		_ = json.NewEncoder(w).Encode([]*github.Event{
 			{ID: &id, Type: &eventType},
 		})
 	})
@@ -136,7 +136,7 @@ func TestGetOrgRepos_SinglePage(t *testing.T) {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/orgs/myorg/repos", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode([]*github.Repository{
+		_ = json.NewEncoder(w).Encode([]*github.Repository{
 			{Name: &repoName, FullName: &repoFullName},
 		})
 	})
@@ -175,12 +175,12 @@ func TestGetOrgs_Paginated(t *testing.T) {
 		switch page {
 		case "", "1":
 			w.Header().Set("Link", fmt.Sprintf(`<%s/user/orgs?page=2>; rel="next"`, server.URL))
-			json.NewEncoder(w).Encode([]*github.Organization{
+			_ = json.NewEncoder(w).Encode([]*github.Organization{
 				{Login: &login1},
 				{Login: &login2},
 			})
 		case "2":
-			json.NewEncoder(w).Encode([]*github.Organization{
+			_ = json.NewEncoder(w).Encode([]*github.Organization{
 				{Login: &login3},
 			})
 		}
@@ -228,12 +228,12 @@ func TestGetRepos_Paginated(t *testing.T) {
 		switch page {
 		case "", "1":
 			w.Header().Set("Link", fmt.Sprintf(`<%s/user/repos?page=2>; rel="next"`, server.URL))
-			json.NewEncoder(w).Encode([]*github.Repository{
+			_ = json.NewEncoder(w).Encode([]*github.Repository{
 				{Name: &name1, FullName: &fullName1},
 				{Name: &name2, FullName: &fullName2},
 			})
 		case "2":
-			json.NewEncoder(w).Encode([]*github.Repository{
+			_ = json.NewEncoder(w).Encode([]*github.Repository{
 				{Name: &name3, FullName: &fullName3},
 			})
 		}
@@ -275,12 +275,12 @@ func TestRemoveEmptyRepos_FiltersEmpty(t *testing.T) {
 	mux.HandleFunc("/repos/org/has-content/contents/", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(200)
-		w.Write([]byte(`[{"name":"README.md","type":"file"}]`))
+		_, _ = w.Write([]byte(`[{"name":"README.md","type":"file"}]`))
 	})
 	mux.HandleFunc("/repos/org/empty-repo/contents/", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(404)
-		w.Write([]byte(`{"message":"Not Found"}`))
+		_, _ = w.Write([]byte(`{"message":"Not Found"}`))
 	})
 	server := httptest.NewServer(mux)
 	defer server.Close()
@@ -315,7 +315,7 @@ func TestRemoveEmptyRepos_APIError(t *testing.T) {
 	mux.HandleFunc("/repos/org/error-repo/contents/", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(500)
-		w.Write([]byte(`{"message":"Internal Server Error"}`))
+		_, _ = w.Write([]byte(`{"message":"Internal Server Error"}`))
 	})
 	server := httptest.NewServer(mux)
 	defer server.Close()
@@ -345,12 +345,12 @@ func TestRemoveEmptyRepos_AllEmpty(t *testing.T) {
 	mux.HandleFunc("/repos/org/empty-one/contents/", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(404)
-		w.Write([]byte(`{"message":"Not Found"}`))
+		_, _ = w.Write([]byte(`{"message":"Not Found"}`))
 	})
 	mux.HandleFunc("/repos/org/empty-two/contents/", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(404)
-		w.Write([]byte(`{"message":"Not Found"}`))
+		_, _ = w.Write([]byte(`{"message":"Not Found"}`))
 	})
 	server := httptest.NewServer(mux)
 	defer server.Close()
@@ -384,12 +384,12 @@ func TestRemoveEmptyRepos_NoneEmpty(t *testing.T) {
 	mux.HandleFunc("/repos/org/repo-one/contents/", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(200)
-		w.Write([]byte(`[{"name":"README.md","type":"file"}]`))
+		_, _ = w.Write([]byte(`[{"name":"README.md","type":"file"}]`))
 	})
 	mux.HandleFunc("/repos/org/repo-two/contents/", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(200)
-		w.Write([]byte(`[{"name":"README.md","type":"file"}]`))
+		_, _ = w.Write([]byte(`[{"name":"README.md","type":"file"}]`))
 	})
 	server := httptest.NewServer(mux)
 	defer server.Close()
