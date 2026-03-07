@@ -31,8 +31,8 @@ func NewGitHubAPI(ctx context.Context, token *string) *GitHubAPI {
 
 // GetOrgs returns a list of organizations that the user can access
 func (g *GitHubAPI) GetOrgs() ([]*github.Organization, error) {
-	var orgs []*github.Organization = make([]*github.Organization, 0)
-	var opts github.ListOptions = github.ListOptions{
+	var orgs = make([]*github.Organization, 0)
+	var opts = github.ListOptions{
 		PerPage: 100,
 	}
 	for {
@@ -41,10 +41,10 @@ func (g *GitHubAPI) GetOrgs() ([]*github.Organization, error) {
 			return nil, fmt.Errorf("failed to get orgs: %w", err)
 		}
 
-		if resp.Rate.Remaining < 500 {
-			fmt.Printf("Rate limit reached, sleeping for %v seconds\n", time.Until(resp.Rate.Reset.Time).Seconds())
+		if resp.Remaining < 500 {
+			fmt.Printf("Rate limit reached, sleeping for %v seconds\n", time.Until(resp.Reset.Time).Seconds())
 
-			time.Sleep(time.Until(resp.Rate.Reset.Time))
+			time.Sleep(time.Until(resp.Reset.Time))
 		}
 
 		orgs = append(orgs, new_orgs...)
@@ -58,7 +58,7 @@ func (g *GitHubAPI) GetOrgs() ([]*github.Organization, error) {
 
 // GetRepos returns a list of repositories that the user can access, excluding orgs
 func (g *GitHubAPI) GetRepos() ([]*github.Repository, error) {
-	var opts github.RepositoryListOptions = github.RepositoryListOptions{
+	var opts = github.RepositoryListOptions{
 		Type: "all",
 		ListOptions: github.ListOptions{
 			PerPage: 100,
@@ -71,17 +71,17 @@ func (g *GitHubAPI) GetRepos() ([]*github.Repository, error) {
 			return nil, fmt.Errorf("failed to get repos: %w", err)
 		}
 
-		if resp.Rate.Remaining < 500 {
-			fmt.Printf("Rate limit reached, sleeping for %v seconds\n", time.Until(resp.Rate.Reset.Time).Seconds())
+		if resp.Remaining < 500 {
+			fmt.Printf("Rate limit reached, sleeping for %v seconds\n", time.Until(resp.Reset.Time).Seconds())
 
-			time.Sleep(time.Until(resp.Rate.Reset.Time))
+			time.Sleep(time.Until(resp.Reset.Time))
 		}
 
 		repos = append(repos, new_repos...)
 		if resp.NextPage == 0 {
 			break
 		}
-		opts.ListOptions.Page = resp.NextPage
+		opts.Page = resp.NextPage
 	}
 	return repos, nil
 }
@@ -101,33 +101,33 @@ func (g *GitHubAPI) GetOrgRepos(org *github.Organization) ([]*github.Repository,
 			return nil, fmt.Errorf("failed to get repos for org: %w", err)
 		}
 
-		if resp.Rate.Remaining < 500 {
-			fmt.Printf("Rate limit reached, sleeping for %v seconds\n", time.Until(resp.Rate.Reset.Time).Seconds())
+		if resp.Remaining < 500 {
+			fmt.Printf("Rate limit reached, sleeping for %v seconds\n", time.Until(resp.Reset.Time).Seconds())
 
-			time.Sleep(time.Until(resp.Rate.Reset.Time))
+			time.Sleep(time.Until(resp.Reset.Time))
 		}
 
 		repos = append(repos, new_repos...)
 		if resp.NextPage == 0 {
 			break
 		}
-		opts.ListOptions.Page = resp.NextPage
+		opts.Page = resp.NextPage
 	}
 	return repos, nil
 }
 
 // RemoveEmptyRepos removes repositories that have no files available, returning the list otherwise unchanged
 func (g *GitHubAPI) RemoveEmptyRepos(repos []*github.Repository) ([]*github.Repository, error) {
-	var filtered_repos []*github.Repository = make([]*github.Repository, 0)
+	var filtered_repos = make([]*github.Repository, 0)
 	for _, repo := range repos {
 		_, _, resp, err := g.client.Repositories.GetContents(context.Background(), repo.GetOwner().GetLogin(), repo.GetName(), "", nil)
 
 		// will return 404 error if the repo is empty
 		if err != nil {
-			if resp.Rate.Remaining < 500 {
-				fmt.Printf("Rate limit reached, sleeping for %v seconds\n", time.Until(resp.Rate.Reset.Time).Seconds())
+			if resp.Remaining < 500 {
+				fmt.Printf("Rate limit reached, sleeping for %v seconds\n", time.Until(resp.Reset.Time).Seconds())
 
-				time.Sleep(time.Until(resp.Rate.Reset.Time))
+				time.Sleep(time.Until(resp.Reset.Time))
 			}
 
 			if resp.StatusCode == 404 {
@@ -159,16 +159,16 @@ func (g *GitHubAPI) GetLastCommit(repo *github.Repository) (*string, error) {
 		return nil, fmt.Errorf("failed to get events for repo: %w", err)
 	}
 
-	if resp.Rate.Remaining < 500 {
-		fmt.Printf("Rate limit reached, sleeping for %v seconds\n", time.Until(resp.Rate.Reset.Time).Seconds())
+	if resp.Remaining < 500 {
+		fmt.Printf("Rate limit reached, sleeping for %v seconds\n", time.Until(resp.Reset.Time).Seconds())
 
-		time.Sleep(time.Until(resp.Rate.Reset.Time))
+		time.Sleep(time.Until(resp.Reset.Time))
 	}
 
 	// sha256 hash of resp body
 
 	// print each event as a string and merge into one, feeding it into a hash
-	var hash_string string = ""
+	var hash_string = ""
 	for _, e := range event {
 		hash_string += fmt.Sprintf("%v", e)
 	}
