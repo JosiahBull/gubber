@@ -16,7 +16,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v6
 
-      - uses: actions/setup-go@v6
+      - uses: actions/setup-go@v7
 
       - name: Run golang-lint
         uses: golangci/golangci-lint-action@v9
